@@ -1,0 +1,5 @@
+<!-- If your project folder is on your Desktop (Mac example) -->
+<a href="vscode://file/Users/yuven.YUVSNELAPTOP/Desktop/my-project/game.html">Open game.html in VS Code</a>
+
+<!-- If your project folder is on your C: drive (Windows example) -->
+<a href="vscode://file/C:/Projects/my-project/game.html">Open game.html in VS Code</a>

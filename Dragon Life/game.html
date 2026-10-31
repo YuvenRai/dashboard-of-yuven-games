@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dragon Life Arcade</title>
+    <style>
+        body { margin: 0; background: #120136; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; color: #fff; padding: 20px; }
+        h1 { color: #ff007f; font-size: 32px; text-shadow: 2px 2px #ffd700; margin: 10px; }
+        #ui { display: flex; gap: 20px; margin-bottom: 15px; font-size: 20px; font-weight: bold; }
+        #game-box { position: relative; }
+        canvas { background: linear-gradient(to bottom, #190061, #c77dff); border: 5px solid #fff; border-radius: 15px; display: block; }
+    </style>
+</head>
+<body>
+
+    <h1>✨ DRAGON LIFE ✨</h1>
+
+    <div id="ui">
+        <div style="color:#ffd700">🪙 Coins: <span id="cc">0</span></div>
+        <div style="color:#ff4757">❤️ Hearts: <span id="lc">❤️❤️❤️❤️❤️</span></div>
+        <div style="color:#2ed573">🏆 Score: <span id="sc">0</span></div>
+    </div>
+
+    <div id="game-box">
+        <canvas id="gC" width="800" height="400"></canvas>
+    </div>
+
+    <div style="margin-top:15px; background:rgba(0,0,0,0.5); padding:10px; border-radius:8px; text-align:center;">
+        🎮 <b>GAME AUTO-STARTED</b> 🎮<br>
+        Fly Up/Down: Press <b>W / S keys</b> or <b>Arrow Keys</b><br>
+        Shoot Fireballs: Press the <b>SPACEBAR</b> to blast monsters!<br>
+        <span style="color: #00ffff; font-size: 13px;">(When you run out of hearts, you will have 5 seconds to look at your score before it reloads!)</span>
+    </div>
+
+    <script>
+        (function() {
+            const canvas = document.getElementById("gC"), ctx = canvas.getContext("2d");
+            const coinD = document.getElementById("cc"), livesD = document.getElementById("lc"), scoreD = document.getElementById("sc");
+            let coins = 0, lives = 5, score = 0, gameActive = true;
+            const dragon = { x: 60, y: 180, w: 60, h: 45, s: 7 };
+            let items = [], bullets = [], keys = {};
+            let countdownSeconds = 5;
+
+            window.focus();
+
+            window.addEventListener("keydown", function(e) {
+                keys[e.key] = true;
+                if(e.key === " " || e.code === "Space") {
+                    e.preventDefault();
+                    if (gameActive) {
+                        bullets.push({ x: dragon.x + dragon.w, y: dragon.y + dragon.h/2 - 4, w: 20, h: 10, s: 12 });
+                    }
+                }
+            });
+            window.addEventListener("keyup", function(e) { keys[e.key] = false; });
+
+            function spawn() {
+                if (!gameActive) return;
+                if (Math.random() < 0.45) {
+                    items.push({ x: canvas.width, y: Math.random()*330 + 30, w: 22, h: 22, t: "coin", s: 4 });
+                } else {
+                    items.push({ x: canvas.width, y: Math.random()*320 + 30, w: 35, h: 35, t: "enemy", s: Math.random()*2 + 4, c: ["#ff4757","#ffa502","#9b59b6"][Math.floor(Math.random()*3)] });
+                }
+                setTimeout(spawn, 750);
+            }
+
+            function startReloadTimer() {
+                const timerInterval = setInterval(function() {
+                    countdownSeconds--;
+                    
+                    ctx.fillStyle = "rgba(18, 1, 54, 1)"; 
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    ctx.fillStyle = "#ff4757"; ctx.font = "bold 44px sans-serif"; ctx.textAlign = "center"; 
+                    ctx.fillText("💥 GAME OVER 💥", canvas.width/2, canvas.height/2 - 30);
+                    
+                    ctx.fillStyle = "#fff"; ctx.font = "bold 20px sans-serif"; 
+                    ctx.fillText(`Final Score: ${Math.floor(score)} | Coins Accumulated: ${coins}`, canvas.width/2, canvas.height/2 + 15);
+                    
+                    ctx.fillStyle = "#00ffff"; ctx.font = "bold 18px sans-serif";
+                    ctx.fillText(`Reloading game in ${countdownSeconds} seconds... 🚀`, canvas.width/2, canvas.height/2 + 65);
+
+                    if (countdownSeconds <= 0) {
+                        clearInterval(timerInterval);
+                        window.location.href = "https://tinyurl.com/reload-dragon-local";
+                    }
+                }, 1000);
+            }
+
+            function loop() {
+                if (gameActive) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    score += 0.15;
+                    coinD.innerText = coins;
+                    livesD.innerText = "❤️".repeat(lives);
+                    scoreD.innerText = Math.floor(score);
+
+                    if (keys.ArrowUp || keys.w || keys.W) dragon.y -= dragon.s;
+                    if (keys.ArrowDown || keys.s || keys.S) dragon.y += dragon.s;
+                    if (dragon.y < 10) dragon.y = 10;
+                    if (dragon.y > canvas.height - dragon.h - 10) dragon.y = canvas.height - dragon.h - 10;
+
+                    // Draw Dragon Body
+                    ctx.fillStyle = "#2ed573"; ctx.fillRect(dragon.x, dragon.y, dragon.w, dragon.h);
+                    ctx.fillStyle = "#fff200"; ctx.fillRect(dragon.x + dragon.w - 15, dragon.y + 15, 15, 20);
+                    ctx.fillStyle = "#ff7f50"; ctx.fillRect(dragon.x + 8, dragon.y - 6, 16, 24);
+                    ctx.fillStyle = "#fff"; ctx.fillRect(dragon.x + dragon.w - 20, dragon.y + 6, 10, 10);
+                    ctx.fillStyle = "#000"; ctx.fillRect(dragon.x + dragon.w - 16, dragon.y + 8, 5, 5);
+
+                    // Bullets
+                    for (let b = bullets.length - 1; b >= 0; b--) {
+                        let f = bullets[b]; f.x += f.s;
+                        ctx.fillStyle = "#fffa65"; ctx.fillRect(f.x, f.y, f.w, f.h);
+                        if (f.x > canvas.width) bullets.splice(b, 1);
+                    }
+
+                    // Game objects
+                    for (let i = items.length - 1; i >= 0; i--) {
+                        let o = items[i]; o.x -= o.s;
+
+                        if (o.t === "coin") {
+                            ctx.fillStyle = "#ffd700"; ctx.fillRect(o.x, o.y, o.w, o.h);
+                            ctx.fillStyle = "#fff"; ctx.fillRect(o.x + 5, o.y + 5, o.w - 10, o.h - 10);
+                        } else {
+                            ctx.fillStyle = o.c; ctx.fillRect(o.x, o.y, o.w, o.h);
+                            ctx.fillStyle = "#fff"; ctx.fillRect(o.x + 4, o.y + 6, 6, 6); ctx.fillRect(o.x + 20, o.y + 6, 6, 6);
+                        }
+
+                        if (o.t === "enemy") {
+                            for (let b = bullets.length - 1; b >= 0; b--) {
+                                let f = bullets[b];
+                                if (f.x < o.x + o.w && f.x + f.w > o.x && f.y < o.y + o.h && f.y + f.h > o.y) {
+                                    items.splice(i, 1); bullets.splice(b, 1); score += 40; break;
+                                }
+                            }
+                            if (!items[i]) continue;
+                        }
+
+                        if (dragon.x < o.x + o.w && dragon.x + dragon.w > o.x && dragon.y < o.y + o.h && dragon.y + dragon.h > o.y) {
+                            if (o.t === "coin") { coins += 1; score += 15; } else {
+                                lives -= 1; 
+                                if (lives <= 0) {
+                                    gameActive = false;
+                                    startReloadTimer();
+                                    return; 
+                                }
+                            }
+                            items.splice(i, 1); continue;
+                        }
+                        if (o.x + o.w < 0) items.splice(i, 1);
+                    }
+                    requestAnimationFrame(loop);
+                }
+            }
+            spawn(); loop();
+        })();
+    </script>
+</body>
+</html>
