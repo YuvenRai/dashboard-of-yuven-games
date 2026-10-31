@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gamer Tag Maker! 🎮</title>
+    <style>
+        @import url('https://googleapis.com');
+
+        body {
+            font-family: 'Quicksand', 'Segoe UI', sans-serif;
+            background-color: #0d1117;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #f0f6fc;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        h1 {
+            font-family: 'Fredoka One', sans-serif;
+            color: #00f0ff;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5), 3px 3px 0px #ff007f;
+            font-size: 2.2rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .live-display-zone {
+            width: 100%;
+            max-width: 800px;
+            background: #161b22;
+            padding: 20px;
+            border-radius: 25px;
+            border: 3px dashed #ff007f;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+            box-sizing: border-box;
+        }
+
+        .preview-title {
+            font-family: 'Fredoka One', sans-serif;
+            color: #ff007f;
+            margin: 0 0 15px 0;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+        }
+
+        .tag-canvas {
+            width: 340px;
+            height: 200px;
+            border-radius: 20px;
+            background-color: #ff007f;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow: hidden;
+            border: 6px solid rgba(255,255,255,0.2);
+        }
+
+        .tag-canvas::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            background: #0d1117;
+            border-radius: 50%;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+            border: 4px solid rgba(255,255,255,0.1);
+        }
+
+        .tag-emoji {
+            font-size: 3.8rem;
+            margin-bottom: 5px;
+            z-index: 2;
+        }
+
+        .tag-text {
+            font-family: 'Fredoka One', sans-serif;
+            font-size: 1.5rem;
+            color: white;
+            text-align: center;
+            z-index: 2;
+            text-shadow: 3px 3px 0px rgba(0,0,0,0.4);
+            word-break: break-word;
+            max-width: 80%;
+            letter-spacing: 1px;
+        }
+
+        .sticker-element {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.4;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .sticker-top-left { top: 15px; right: 20px; transform: rotate(-15px); }
+        .sticker-bottom-right { bottom: 15px; right: 20px; transform: rotate(15px); }
+        .sticker-bottom-left { bottom: 15px; left: 55px; transform: rotate(-10px); }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: #161b22;
+            padding: 25px;
+            border-radius: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 4px solid #30363d;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .section-title {
+            font-family: 'Fredoka One', sans-serif;
+            color: #00f0ff;
+            margin: 0 0 12px 0;
+            font-size: 1.1rem;
+        }
+
+        .input-box {
+            width: 100%;
+            padding: 14px 20px;
+            background-color: #21262d;
+            border: 3px solid #30363d;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            color: #fff;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .grid-options {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 12px;
+        }
+
+        .color-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 4px solid #161b22;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+
+        .choice-btn {
+            font-size: 1.8rem;
+            background: #21262d;
+            border: 3px solid #30363d;
+            border-radius: 15px;
+            cursor: pointer;
+            padding: 10px 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .print-action-btn {
+            font-family: 'Fredoka One', sans-serif;
+            background-color: #39ff14;
+            color: #0d1117;
+            border: none;
+            padding: 16px 40px;
+            font-size: 1.3rem;
+            border-radius: 50px;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 600px) {
+            .grid-options {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎮 Gamer Tag Maker Hub</h1>
+    
+    <div class="live-display-zone">
+        <h3 class="preview-title">🔴 LIVE MONITOR DISPLAY</h3>
+        <div class="tag-canvas" id="tagCanvas">
+            <div class="sticker-element sticker-top-left" id="s1">🎮</div>
+            <div class="sticker-element sticker-bottom-right" id="s2">🎮</div>
+            <div class="sticker-element sticker-bottom-left" id="s3">🎮</div>
+            <div class="tag-emoji" id="displayEmoji">🎮</div>
+            <div class="tag-text" id="displayText">PLAYER 1</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div>
+            <h3 class="section-title">✏️ 1. Choose Your Gamer Tag:</h3>
+            <input type="text" id="tagTextInput" class="input-box" value="PLAYER 1" oninput="document.getElementById('displayText').textContent = this.value.toUpperCase() || 'READY'">
+        </div>
+
+        <div>
+            <h3 class="section-title">🎨 2. Choose Glowing Energy Color:</h3>
+            <div class="grid-options">
+                <button class="color-btn" style="background-color: #ff007f;" onclick="document.getElementById('tagCanvas').style.backgroundColor = '#ff007f'"></button>
+                <button class="color-btn" style="background-color: #00f0ff;" onclick="document.getElementById('tagCanvas').style.backgroundColor = '#00f0ff'"></button>
+                <button class="color-btn" style="background-color: #7000ff;" onclick="document.getElementById('tagCanvas').style.backgroundColor = '#7000ff'"></button>
+                <button class="color-btn" style="background-color: #39ff14;" onclick="document.getElementById('tagCanvas').style.backgroundColor = '#39ff14'"></button>
+                <button class="color-btn" style="background-color: #ffb703;" onclick="document.getElementById('tagCanvas').style.backgroundColor = '#ffb703'"></button>
+                <button class="color-btn" style="background-color: #ff4d00;" onclick="document.getElementById('tagCanvas').style.backgroundColor = '#ff4d00'"></button>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="section-title">👾 3. Choose Your Avatar:</h3>
+            <div class="grid-options">
+                <button class="choice-btn" onclick="document.getElementById('displayEmoji').textContent = '🎮'">🎮</button>
+                <button class="choice-btn" onclick="document.getElementById('displayEmoji').textContent = '👾'">👾</button>
+                <button class="choice-btn" onclick="document.getElementById('displayEmoji').textContent = '🤖'">🤖</button>
+                <button class="choice-btn" onclick="document.getElementById('displayEmoji').textContent = '🐉'">🐉</button>
+                <button class="choice-btn" onclick="document.getElementById('displayEmoji').textContent = '🚀'">🚀</button>
+                <button class="choice-btn" onclick="document.getElementById('displayEmoji').textContent = 'Rex'">🦖</button>
+                <button class="choice-btn" onclick="document.getElementById('displayEmoji').textContent = '👑'">👑</button>
+                <button class="choice-btn" onclick="document.getElementById('displayEmoji').textContent = '💎'">💎</button>
+                <button class="choice-btn" onclick="document.getElementById('displayEmoji').textContent = '👻'">👻</button>
+                <button class="choice-btn" onclick="document.getElementById('displayEmoji').textContent = '🦊'">🦊</button>
+                <button class="choice-btn" onclick="document.getElementById('displayEmoji').textContent = '🔥'">🔥</button>
+                <button class="choice-btn" onclick="document.getElementById('displayEmoji').textContent = '⚡'">⚡</button>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="section-title">💥 4. Choose Background HUD Graphics:</h3>
+            <div class="grid-options">
+                <button class="choice-btn" onclick="document.getElementById('s1').textContent = '🎮'; document.getElementById('s2').textContent = '🎮'; document.getElementById('s3').textContent = '🎮';">🎮</button>
+                <button class="choice-btn" onclick="document.getElementById('s1').textContent = '⚡'; document.getElementById('s2').textContent = '⚡'; document.getElementById('s3').textContent = '⚡';">⚡</button>

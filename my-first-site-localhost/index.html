@@ -1,0 +1,2101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#090714">
+  <title>DJ Click Deck</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-width: 0;
+      min-height: 100vh;
+      min-height: 100svh;
+      min-height: 100dvh;
+      margin: 0;
+      padding: 1.25rem 0;
+      display: grid;
+      place-items: center;
+      overflow-x: hidden;
+      color: #f8f5ed;
+      background:
+        radial-gradient(ellipse at 18% 22%, rgb(0 229 255 / 14%), transparent 30%),
+        radial-gradient(ellipse at 82% 28%, rgb(255 39 173 / 13%), transparent 32%),
+        radial-gradient(ellipse at 50% 100%, #211331, #090714 68%);
+    }
+
+    .game {
+      position: relative;
+      width: min(100% - 2rem, 34rem);
+      padding: clamp(2rem, 7vw, 3.5rem) 1.5rem 2.5rem;
+      text-align: center;
+      border: 1px solid rgb(178 118 255 / 22%);
+      border-radius: 28px;
+      background: linear-gradient(145deg, rgb(255 255 255 / 6%), rgb(16 10 32 / 82%));
+      box-shadow: 0 28px 90px rgb(0 0 0 / 55%), 0 0 60px rgb(135 58 255 / 10%), inset 0 1px rgb(255 255 255 / 7%);
+    }
+
+    .game.is-intro > :not(.instructions) {
+      visibility: hidden;
+    }
+
+    .game.is-locked > :not(.auth-panel):not(.instructions) {
+      visibility: hidden;
+    }
+
+    .instructions {
+      width: min(100% - 2rem, 420px);
+      max-height: calc(100vh - 2rem);
+      max-height: calc(100dvh - 2rem);
+      overflow-y: auto;
+      padding: 2rem;
+      border: 1px solid rgb(115 247 255 / 30%);
+      border-radius: 24px;
+      color: #f8f5ed;
+      background: linear-gradient(145deg, #211331, #0d0a19);
+      box-shadow: 0 28px 90px rgb(0 0 0 / 70%), 0 0 55px rgb(0 229 255 / 12%);
+      overscroll-behavior: contain;
+      transition: opacity var(--fade-duration, 19s) linear;
+    }
+
+    .camera-dialog {
+      width: min(calc(100% - 2rem), 32rem);
+      max-height: calc(100vh - 2rem);
+      max-height: calc(100dvh - 2rem);
+      overflow-y: auto;
+      padding: 1.25rem;
+      border: 1px solid rgb(115 247 255 / 30%);
+      border-radius: 20px;
+      color: #f8f5ed;
+      background: linear-gradient(145deg, #211331, #0d0a19);
+      box-shadow: 0 28px 90px rgb(0 0 0 / 70%), 0 0 55px rgb(0 229 255 / 12%);
+    }
+
+    .camera-dialog::backdrop {
+      background: rgb(5 4 12 / 84%);
+      backdrop-filter: blur(8px);
+    }
+
+    .camera-dialog h2 {
+      margin: 0 0 0.5rem;
+      padding-right: 2.5rem;
+      color: #73f7ff;
+    }
+
+    .camera-close-button {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      display: grid;
+      width: 2.5rem;
+      min-height: 2.5rem;
+      padding: 0;
+      place-items: center;
+      border: 1px solid rgb(115 247 255 / 45%);
+      border-radius: 10px;
+      color: #f8f5ed;
+      background: #100d1a;
+      font: inherit;
+      font-size: 1.5rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .camera-close-button:focus-visible {
+      outline: 3px solid #ff52ce;
+      outline-offset: 3px;
+    }
+
+    .camera-preview {
+      display: block;
+      width: 100%;
+      max-height: 55dvh;
+      background: #100d1a;
+      object-fit: contain;
+    }
+
+    .photo-stage {
+      position: relative;
+      width: 100%;
+      margin: 1rem 0;
+      overflow: hidden;
+      aspect-ratio: 4 / 3;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #06b6d4, #7c3aed 58%, #f472b6);
+    }
+
+    .photo-stage[data-photo-background="1"] {
+      background: linear-gradient(135deg, #06b6d4, #7c3aed 58%, #f472b6);
+    }
+
+    .photo-stage[data-photo-background="2"] {
+      background: linear-gradient(135deg, #f97316, #facc15 58%, #db2777);
+    }
+
+    .photo-stage[data-photo-background="3"] {
+      background: linear-gradient(135deg, #0ea5e9, #6366f1 58%, #a855f7);
+    }
+
+    .photo-stage[data-photo-background="4"] {
+      background: linear-gradient(135deg, #22c55e, #14b8a6 58%, #0ea5e9);
+    }
+
+    .photo-stage .camera-preview {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      max-height: none;
+      object-fit: cover;
+    }
+
+    .camera-preview[hidden] {
+      display: none;
+    }
+
+    .camera-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .camera-status {
+      min-height: 1.5em;
+      margin: 0.75rem 0 0;
+      color: #73f7ff;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .instructions.is-closing {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .instructions::backdrop {
+      background: rgb(5 4 12 / 84%);
+      backdrop-filter: blur(8px);
+    }
+
+    .instructions h2 {
+      margin: 0 0 0.75rem;
+      color: #73f7ff;
+      font-size: 1.6rem;
+    }
+
+    .instructions p,
+    .instructions li {
+      color: #c2b8d2;
+      line-height: 1.6;
+    }
+
+    .instructions ul {
+      margin: 1rem 0 1.5rem;
+      padding-left: 1.25rem;
+      text-align: left;
+    }
+
+    .instructions-start {
+      position: sticky;
+      bottom: 0;
+      width: 100%;
+      min-height: 44px;
+      padding: 0.85rem 1rem;
+      border: 0;
+      border-radius: 12px;
+      color: #090714;
+      background: #73f7ff;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 0.5rem 1rem 0.5rem #0d0a19;
+    }
+
+    .instructions-start:focus-visible {
+      outline: 3px solid #ff52ce;
+      outline-offset: 3px;
+    }
+
+    .mic-button {
+      min-height: 44px;
+      padding: 0.7rem 1rem;
+      border: 1px solid rgb(115 247 255 / 55%);
+      border-radius: 12px;
+      color: #090714;
+      background: #73f7ff;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .mic-button:focus-visible {
+      outline: 3px solid #ff52ce;
+      outline-offset: 3px;
+    }
+
+    .auth-panel {
+      position: fixed;
+      z-index: 5;
+      top: max(1rem, env(safe-area-inset-top, 0px));
+      left: 50vw;
+      width: min(calc(100vw - 2rem), 30rem);
+      max-height: calc(100dvh - 2rem);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      margin: 0;
+      padding: 1.25rem;
+      border: 1px solid rgb(115 247 255 / 30%);
+      border-radius: 16px;
+      background: linear-gradient(145deg, #211331, #0d0a19);
+      text-align: left;
+      transform: translateX(-50%);
+    }
+
+    .auth-panel h2 {
+      text-align: center;
+    }
+
+    .auth-panel h2 {
+      margin: 0;
+      color: #73f7ff;
+      font-size: 1.25rem;
+    }
+
+    .auth-panel[hidden] {
+      display: none;
+    }
+
+    .auth-form {
+      display: grid;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      text-align: left;
+    }
+
+    .auth-form input {
+      width: 100%;
+      min-height: 44px;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid rgb(115 247 255 / 45%);
+      border-radius: 10px;
+      color: #f8f5ed;
+      background: #100d1a;
+      font: inherit;
+    }
+
+    .auth-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+
+    .auth-actions .mic-button {
+      width: 100%;
+      margin-top: 0.25rem;
+    }
+
+    .auth-status {
+      min-height: 1.5em;
+      margin: 0;
+      color: #73f7ff;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .feedback-link {
+      justify-self: start;
+      min-height: 44px;
+      padding: 0.7rem 1rem;
+      border: 1px solid rgb(255 82 206 / 65%);
+      border-radius: 12px;
+      color: #f8f5ed;
+      background: #211331;
+      font: inherit;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .feedback-link:focus-visible {
+      outline: 3px solid #ff52ce;
+      outline-offset: 3px;
+    }
+
+    .feedback-link[hidden] {
+      display: none;
+    }
+
+    .save-file-input {
+      display: block;
+      width: 100%;
+      margin-top: 0.5rem;
+      color: #f8f5ed;
+      font: inherit;
+    }
+
+    .auth-form:focus-visible,
+    .mic-button:focus-visible,
+    .auth-form input:focus-visible {
+      outline: 3px solid #ff52ce;
+      outline-offset: 3px;
+    }
+
+    .save-code-notice {
+      color: #73f7ff;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .mic-button[hidden] {
+      display: none;
+    }
+
+    .eyebrow {
+      margin: 0 0 0.6rem;
+      color: #ff52ce;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 9vw, 3rem);
+      font-weight: 750;
+      letter-spacing: -0.06em;
+      text-shadow: 0 0 28px rgb(0 229 255 / 18%);
+    }
+
+    .score-label {
+      margin: 2.4rem 0 0.25rem;
+      color: #aaa1bb;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .score {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      color: #73f7ff;
+      font-size: clamp(3.5rem, 16vw, 5.25rem);
+      font-variant-numeric: tabular-nums;
+      font-weight: 750;
+      line-height: 1.1;
+      overflow-wrap: anywhere;
+      text-shadow: 0 0 32px rgb(0 229 255 / 38%);
+    }
+
+    .score.pop {
+      animation: score-pop 240ms ease-out;
+    }
+
+    .combo-indicator {
+      margin: 0.5rem 0 0;
+      color: #ff855f;
+      font-weight: 700;
+    }
+
+    .click-zone {
+      position: relative;
+      display: grid;
+      min-height: 270px;
+      margin-top: 0.5rem;
+      place-items: center;
+      isolation: isolate;
+    }
+
+    .click-button {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      width: clamp(190px, 62vw, 240px);
+      aspect-ratio: 1;
+      padding: 1rem;
+      place-items: center;
+      border: 1px solid rgb(255 255 255 / 22%);
+      border-radius: 50%;
+      color: #fff;
+      background:
+        radial-gradient(circle at center, #ff58d2 0 9%, #361638 9.5% 13%, transparent 13.5%),
+        repeating-radial-gradient(circle at center, #161222 0 3px, #211b31 4px 5px, #100d1a 6px 8px);
+      box-shadow:
+        0 0 0 9px rgb(255 50 198 / 8%),
+        0 0 0 18px rgb(0 229 255 / 5%),
+        0 18px 35px rgb(0 0 0 / 42%),
+        0 0 48px rgb(255 50 198 / 28%),
+        inset 0 2px 8px rgb(255 255 255 / 12%),
+        inset 0 -12px 20px rgb(0 0 0 / 45%);
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 140ms ease, box-shadow 180ms ease, filter 180ms ease;
+    }
+
+    .click-button::before {
+      position: absolute;
+      inset: 8px;
+      border: 1px solid rgb(124 245 255 / 40%);
+      border-radius: inherit;
+      content: "";
+      pointer-events: none;
+    }
+
+    .click-button::after {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: conic-gradient(from 45deg, transparent 0 25%, rgb(0 229 255 / 20%) 27%, transparent 31% 62%, rgb(255 50 198 / 20%) 65%, transparent 70%);
+      content: "";
+      opacity: 0.7;
+      pointer-events: none;
+      animation: record-spin 12s linear infinite;
+    }
+
+    .click-button:hover {
+      filter: brightness(1.08);
+      transform: translateY(-3px) scale(1.02);
+      box-shadow:
+        0 0 0 10px rgb(255 50 198 / 10%),
+        0 0 0 20px rgb(0 229 255 / 7%),
+        0 22px 40px rgb(0 0 0 / 42%),
+        0 0 58px rgb(255 50 198 / 42%),
+        0 0 38px rgb(0 229 255 / 20%),
+        inset 0 2px 8px rgb(255 255 255 / 12%),
+        inset 0 -12px 20px rgb(0 0 0 / 45%);
+    }
+
+    .click-button:active {
+      transform: translateY(2px) scale(0.96);
+    }
+
+    .click-button:focus-visible {
+      outline: 3px solid #73f7ff;
+      outline-offset: 8px;
+    }
+
+    .button-content {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 0.35rem;
+      place-items: center;
+      text-shadow: 0 2px 12px rgb(0 0 0 / 90%), 0 0 18px rgb(0 229 255 / 65%);
+    }
+
+    .coin {
+      font-size: 3.5rem;
+      line-height: 1;
+      color: #8ffaff;
+      filter: drop-shadow(0 0 10px rgb(0 229 255 / 70%));
+    }
+
+    .button-text {
+      font-size: 0.9rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .hint {
+      margin: 0;
+      color: #9c91b2;
+      font-size: 0.9rem;
+    }
+
+    .mic-controls {
+      display: grid;
+      justify-items: center;
+      gap: 0.65rem;
+      margin-top: 1rem;
+    }
+
+    .recording-status {
+      min-height: 1.2em;
+      margin: 0;
+      color: #aaa1bb;
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+
+    .recording-status.unlocked {
+      color: #73f7ff;
+    }
+
+    .recorded-audio {
+      width: min(100%, 320px);
+      height: 40px;
+    }
+
+    .equalizer {
+      display: flex;
+      height: 22px;
+      margin: 1.35rem auto 0;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .equalizer span {
+      width: 3px;
+      height: 35%;
+      border-radius: 3px;
+      background: linear-gradient(#73f7ff, #ff52ce);
+      box-shadow: 0 0 8px rgb(0 229 255 / 55%);
+      animation: equalize 650ms ease-in-out infinite alternate;
+    }
+
+    .equalizer span:nth-child(3n) {
+      animation-delay: -450ms;
+    }
+
+    .equalizer span:nth-child(3n + 1) {
+      animation-delay: -220ms;
+    }
+
+    .shop {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      text-align: left;
+      border: 1px solid rgb(115 247 255 / 18%);
+      border-radius: 16px;
+      background: rgb(8 7 20 / 52%);
+    }
+
+    .upgrade-list {
+      display: grid;
+      max-height: 280px;
+      gap: 0.75rem;
+      overflow-y: auto;
+      padding-right: 0.35rem;
+      scrollbar-color: #594778 transparent;
+      scrollbar-width: thin;
+    }
+
+    .shop-title {
+      margin: 0 0 0.75rem;
+      color: #73f7ff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .upgrade {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgb(255 255 255 / 8%);
+    }
+
+    .upgrade > div {
+      min-width: 0;
+    }
+
+    .upgrade:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .upgrade-name {
+      margin: 0;
+      font-weight: 700;
+    }
+
+    .upgrade-detail {
+      margin: 0.25rem 0 0;
+      color: #9c91b2;
+      font-size: 0.8rem;
+    }
+
+    .buy-button {
+      flex: 0 0 auto;
+      min-height: 44px;
+      padding: 0.65rem 0.85rem;
+      border: 1px solid rgb(115 247 255 / 50%);
+      border-radius: 10px;
+      color: #090714;
+      background: #73f7ff;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 800;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: filter 150ms ease, transform 150ms ease;
+    }
+
+    .buy-button:hover:not(:disabled) {
+      filter: brightness(1.12);
+      transform: translateY(-1px);
+    }
+
+    .buy-button:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 3px;
+    }
+
+    .buy-button:disabled {
+      border-color: rgb(255 255 255 / 12%);
+      color: #756d84;
+      background: #292436;
+      cursor: not-allowed;
+    }
+
+    .particle {
+      position: absolute;
+      z-index: 2;
+      top: var(--y);
+      left: var(--x);
+      width: var(--size);
+      height: var(--size);
+      border-radius: 50%;
+      background: var(--color);
+      box-shadow: 0 0 12px var(--color);
+      opacity: 0;
+      pointer-events: none;
+      animation: sparkle 700ms cubic-bezier(0.12, 0.72, 0.26, 1) forwards;
+    }
+
+    @keyframes sparkle {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.25);
+      }
+      15% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0);
+      }
+    }
+
+    @keyframes score-pop {
+      50% {
+        transform: scale(1.12);
+      }
+    }
+
+    @keyframes record-spin {
+      to {
+        transform: rotate(1turn);
+      }
+    }
+
+    @keyframes equalize {
+      to {
+        height: 100%;
+      }
+    }
+
+    @media (max-width: 420px) {
+      body {
+        padding-block: max(0.75rem, env(safe-area-inset-top, 0px)) max(0.75rem, env(safe-area-inset-bottom, 0px));
+        padding-inline: max(0.5rem, env(safe-area-inset-left, 0px)) max(0.5rem, env(safe-area-inset-right, 0px));
+      }
+
+      .game {
+        width: 100%;
+        padding: 1.75rem clamp(1rem, 5vw, 1.5rem) 1.5rem;
+        border-radius: 24px;
+      }
+
+      .instructions {
+        width: calc(100% - 1rem);
+        padding: clamp(1.25rem, 6vw, 2rem);
+      }
+
+      .click-zone {
+        min-height: clamp(220px, 70vw, 270px);
+      }
+
+      .upgrade {
+        gap: 0.5rem;
+      }
+
+      .buy-button {
+        padding-inline: 0.6rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="game is-intro">
+    <dialog class="instructions" id="instructions" aria-labelledby="instructionsTitle">
+      <p class="eyebrow">Welcome to the club</p>
+      <h2 id="instructionsTitle">How to play</h2>
+      <p>Build your score and unlock the DJ recording feature.</p>
+      <ul>
+        <li>Click the record to drop a beat and earn points.</li>
+        <li>Keep tapping to build a combo streak, up to 8x.</li>
+        <li>Spend points on upgrades to boost your score.</li>
+        <li>At 200 points, use the microphone button to record and play your mix.</li>
+      </ul>
+      <p class="save-code-notice">Enter a username and Game Code to create or load a game saved for this browser and site address. Accounts are not shared online.</p>
+      <button class="instructions-start" id="startGame" type="button">Start playing</button>
+    </dialog>
+
+    <section class="auth-panel" id="authPanel" aria-labelledby="authTitle" hidden>
+      <h2 id="authTitle">Open your DJ deck</h2>
+      <p class="save-code-notice">Create or load a local account. To move a game to another browser or device, export its save file here and import it there. Game Codes are not included.</p>
+      <form class="auth-form" id="authForm">
+        <label for="username">Username</label>
+        <input id="username" name="username" autocomplete="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+" required>
+        <label for="gameCode">Game Code</label>
+        <input id="gameCode" name="gameCode" type="password" autocomplete="current-password" maxlength="256" required>
+        <div class="auth-actions">
+          <button class="mic-button" id="createGameButton" type="button">Create new game</button>
+          <button class="mic-button" type="submit">Load game</button>
+        </div>
+        <label for="importSaveFile">Choose a save file to import</label>
+        <input class="save-file-input" id="importSaveFile" type="file" accept=".json,application/json">
+        <button class="mic-button" id="importSaveButton" type="button">Import save file</button>
+        <p class="auth-status" id="authStatus" role="status" aria-live="polite"></p>
+        <a class="feedback-link" id="feedbackLink" href="feedback.html" hidden>Think this is a mistake? Send a note</a>
+      </form>
+    </section>
+
+    <p class="eyebrow">Now spinning · Club mode</p>
+    <h1>DJ Click Deck With Upgrades</h1>
+    <p class="score-label">Beats dropped</p>
+    <output class="score" id="score" aria-live="polite">0</output>
+    <p class="combo-indicator" id="combo" aria-label="Current combo">Combo: 1x</p>
+    <p class="save-code-notice" id="savedProgressDisplay" role="status" aria-live="polite" hidden></p>
+    <button class="mic-button" id="exportSaveButton" type="button" hidden>Save file to this device</button>
+    <button class="mic-button" id="shareSaveButton" type="button" hidden>Email or share save</button>
+    <button class="mic-button" id="leaveGameButton" type="button" hidden>Switch account</button>
+
+    <div class="click-zone" id="clickZone">
+      <button class="click-button" id="clickButton" type="button" aria-label="Drop the beat and earn points">
+        <span class="button-content">
+          <span class="coin" aria-hidden="true">♫</span>
+          <span class="button-text">Drop the beat</span>
+        </span>
+      </button>
+    </div>
+
+    <p class="hint">Tap the record and feel the rhythm.</p>
+    <div class="mic-controls">
+      <button class="mic-button" id="microphoneButton" type="button" hidden>Start microphone recording</button>
+      <button class="mic-button" id="recordAgainButton" type="button" hidden>Record again</button>
+      <p class="recording-status" id="recordingStatus" role="status" aria-live="polite">Reach 200 points to unlock microphone recording.</p>
+      <audio class="recorded-audio" id="recordedAudio" controls hidden></audio>
+    </div>
+    <button class="mic-button" id="openCameraButton" type="button">Take a photo</button>
+    <div class="equalizer" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+
+    <dialog class="camera-dialog" id="cameraDialog" aria-labelledby="cameraTitle">
+      <button class="camera-close-button" id="cameraCloseButton" type="button" aria-label="Close camera">×</button>
+      <h2 id="cameraTitle">Take a photo to share</h2>
+      <p class="hint">Choose a background, then take a photo. Background removal happens on this device.</p>
+      <div class="photo-stage" id="photoStage" data-photo-background="1">
+        <video class="camera-preview" id="cameraVideo" autoplay playsinline aria-label="Live camera preview" hidden></video>
+        <img class="camera-preview" id="photoPreview" alt="Your captured photo" hidden>
+      </div>
+      <div class="camera-actions">
+        <button class="mic-button" id="changeBackgroundButton" type="button">Change background</button>
+        <button class="mic-button" id="capturePhotoButton" type="button" hidden>Take photo</button>
+        <button class="mic-button" id="sharePhotoButton" type="button" hidden>Share with friends</button>
+        <button class="mic-button" id="downloadPhotoButton" type="button" hidden>Download photo</button>
+        <button class="mic-button" id="retakePhotoButton" type="button" hidden>Retake</button>
+        <button class="mic-button" id="closeCameraButton" type="button">Close</button>
+      </div>
+      <p class="camera-status" id="cameraStatus" role="status" aria-live="polite"></p>
+    </dialog>
+
+    <section class="shop" aria-labelledby="shopTitle">
+      <h2 class="shop-title" id="shopTitle">Upgrades</h2>
+      <div class="upgrade-list" id="upgradeList" aria-label="Available upgrades"></div>
+    </section>
+  </main>
+
+  <script>
+    let score = 0;
+
+    const scoreDisplay = document.getElementById("score");
+    const comboDisplay = document.getElementById("combo");
+    const clickButton = document.getElementById("clickButton");
+    const clickZone = document.getElementById("clickZone");
+    const upgradeList = document.getElementById("upgradeList");
+    const recordingStatus = document.getElementById("recordingStatus");
+    const recordedAudio = document.getElementById("recordedAudio");
+    const microphoneButton = document.getElementById("microphoneButton");
+    const recordAgainButton = document.getElementById("recordAgainButton");
+    const openCameraButton = document.getElementById("openCameraButton");
+    const cameraDialog = document.getElementById("cameraDialog");
+    const photoStage = document.getElementById("photoStage");
+    const cameraVideo = document.getElementById("cameraVideo");
+    const photoPreview = document.getElementById("photoPreview");
+    const changeBackgroundButton = document.getElementById("changeBackgroundButton");
+    const capturePhotoButton = document.getElementById("capturePhotoButton");
+    const sharePhotoButton = document.getElementById("sharePhotoButton");
+    const downloadPhotoButton = document.getElementById("downloadPhotoButton");
+    const retakePhotoButton = document.getElementById("retakePhotoButton");
+    const closeCameraButton = document.getElementById("closeCameraButton");
+    const cameraCloseButton = document.getElementById("cameraCloseButton");
+    const cameraStatus = document.getElementById("cameraStatus");
+    const photoCanvas = document.createElement("canvas");
+    const photoSourceCanvas = document.createElement("canvas");
+    const photoMaskCanvas = document.createElement("canvas");
+    const photoSubjectCanvas = document.createElement("canvas");
+    const instructions = document.getElementById("instructions");
+    const game = document.querySelector(".game");
+    const startGameButton = document.getElementById("startGame");
+    const authPanel = document.getElementById("authPanel");
+    const authForm = document.getElementById("authForm");
+    const createGameButton = document.getElementById("createGameButton");
+    const importSaveFile = document.getElementById("importSaveFile");
+    const importSaveButton = document.getElementById("importSaveButton");
+    const usernameInput = document.getElementById("username");
+    const gameCodeInput = document.getElementById("gameCode");
+    const authStatus = document.getElementById("authStatus");
+    const feedbackLink = document.getElementById("feedbackLink");
+    const savedProgressDisplay = document.getElementById("savedProgressDisplay");
+    const exportSaveButton = document.getElementById("exportSaveButton");
+    const shareSaveButton = document.getElementById("shareSaveButton");
+    const leaveGameButton = document.getElementById("leaveGameButton");
+    const particleColors = ["#73f7ff", "#ff52ce", "#a478ff", "#ffffff"];
+    let audioContext;
+    let noiseBuffer;
+    let mediaRecorder;
+    let microphoneStream;
+    let recordingChunks = [];
+    let recordingInProgress = false;
+    let recordingUrl;
+    let activeAccountKey;
+    let activeUsername;
+    let pointsPerSecond = 0;
+    let clickMultiplier = 1;
+    let passiveMultiplier = 1;
+    let combo = 1;
+    let comboTimer;
+    let echoCount = 0;
+    const upgrades = [
+      { name: "Auto Hi-Hat", cost: 50, costScale: 1.6, detail: "+1 point per second", effect: "passive", value: 1 },
+      { name: "Sample Pack", cost: 15, costScale: 1.5, detail: "+1 point per click", effect: "tap", value: 1 },
+      { name: "Drum Machine", cost: 60, detail: "+3 points per second", effect: "passive", value: 3 },
+      { name: "Synth Pad", cost: 120, detail: "Double points per manual tap", effect: "tapMultiplier", value: 2 },
+      { name: "Turbo Deck", cost: 250, detail: "Double all passive points", effect: "passiveMultiplier", value: 2 },
+      { name: "Echo FX", cost: 400, detail: "Add an echo to your beats", effect: "echo" }
+    ];
+    const upgradeCosts = upgrades.map((upgrade) => upgrade.cost);
+    const upgradePurchaseCounts = upgrades.map(() => 0);
+    const upgradeButtons = [];
+    const upgradeDetails = [];
+    const localProgressStorageKey = "dj-click-deck-progress";
+    const localAccountsStorageKey = "dj-click-deck-accounts";
+    const usernameLockoutStorageKey = "dj-click-deck-username-lockout";
+    const usernameLockoutDuration = 24 * 60 * 60 * 1000;
+    const inappropriateUsernameTerms = [
+      "asshole", "bastard", "bitch", "bullshit", "cunt", "damn", "dick",
+      "fart", "fuck", "motherfucker", "nigger", "pee", "piss", "poop",
+      "poopy", "shit", "slut", "whore"
+    ];
+    let usernameLockoutUntil = 0;
+    let usernameLockoutTimer;
+    let usernameLockoutPersistenceFailed = false;
+    const localCameraPointGate = ["localhost", "127.0.0.1"].includes(window.location.hostname)
+      && ["5500", "8765"].includes(window.location.port);
+    const skipIntroFade = localCameraPointGate;
+
+    function setAuthActionsDisabled(disabled) {
+      createGameButton.disabled = disabled;
+      authForm.querySelector('button[type="submit"]').disabled = disabled;
+      importSaveButton.disabled = disabled;
+    }
+
+    function isUsernameLockedOut() {
+      return usernameLockoutUntil > Date.now();
+    }
+
+    function renderUsernameLockout() {
+      if (!isUsernameLockedOut()) {
+        usernameLockoutUntil = 0;
+        usernameLockoutPersistenceFailed = false;
+        window.clearInterval(usernameLockoutTimer);
+        usernameLockoutTimer = undefined;
+        localStorage.removeItem(usernameLockoutStorageKey);
+        setAuthActionsDisabled(false);
+        feedbackLink.hidden = true;
+        authStatus.textContent = "The 24-hour username timeout has ended. You can try again.";
+        return false;
+      }
+
+      feedbackLink.hidden = false;
+      const remainingSeconds = Math.ceil((usernameLockoutUntil - Date.now()) / 1000);
+      const hours = Math.floor(remainingSeconds / 3600);
+      const minutes = Math.floor(remainingSeconds / 60) % 60;
+      const seconds = remainingSeconds % 60;
+      const persistenceWarning = usernameLockoutPersistenceFailed
+        ? " This browser could not save the timeout, so it may not continue after reload."
+        : "";
+      authStatus.textContent = `That username was not appropriate. Each inappropriate attempt adds 24 hours. Game access is paused for ${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}.${persistenceWarning}`;
+      return true;
+    }
+
+    function startUsernameLockout() {
+      usernameLockoutUntil = Math.max(Date.now(), usernameLockoutUntil) + usernameLockoutDuration;
+      try {
+        localStorage.setItem(usernameLockoutStorageKey, String(usernameLockoutUntil));
+      } catch (error) {
+        usernameLockoutPersistenceFailed = true;
+        console.error("Could not save the username timeout in this browser.", error);
+      }
+      window.clearInterval(usernameLockoutTimer);
+      renderUsernameLockout();
+      usernameLockoutTimer = window.setInterval(renderUsernameLockout, 1000);
+    }
+
+    function checkUsernameForLockout() {
+      const normalizedUsername = usernameInput.value.normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[013457]/g, (character) => ({
+          "0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t"
+        })[character])
+        .replace(/[^a-z]/g, "");
+      if (normalizedUsername
+        && inappropriateUsernameTerms.some((term) => normalizedUsername.includes(term))) {
+        startUsernameLockout();
+        return true;
+      }
+      if (isUsernameLockedOut()) {
+        renderUsernameLockout();
+        return true;
+      }
+      return false;
+    }
+
+    function restoreUsernameLockout() {
+      const savedLockout = localStorage.getItem(usernameLockoutStorageKey);
+      if (!savedLockout) {
+        return;
+      }
+      const lockedUntil = Number(savedLockout);
+      if (!Number.isSafeInteger(lockedUntil) || lockedUntil <= Date.now()) {
+        localStorage.removeItem(usernameLockoutStorageKey);
+        return;
+      }
+      usernameLockoutUntil = lockedUntil;
+      usernameLockoutPersistenceFailed = false;
+      renderUsernameLockout();
+      usernameLockoutTimer = window.setInterval(renderUsernameLockout, 1000);
+    }
+
+    function beginInstructionsFade() {
+      startGameButton.disabled = true;
+      if (skipIntroFade) {
+        instructions.close();
+        return;
+      }
+      instructions.style.setProperty("--fade-duration", `${Math.floor(Math.random() * 28) + 8}s`);
+      instructions.classList.add("is-closing");
+    }
+    startGameButton.addEventListener("click", beginInstructionsFade);
+    instructions.addEventListener("close", () => {
+      instructions.classList.remove("is-closing");
+      startGameButton.disabled = false;
+      game.classList.remove("is-intro");
+      if (!activeAccountKey) {
+        game.classList.add("is-locked");
+        authPanel.hidden = false;
+        if (isUsernameLockedOut()) {
+          renderUsernameLockout();
+        }
+        usernameInput.focus();
+      }
+    });
+    instructions.addEventListener("transitionend", (event) => {
+      if (event.target === instructions && event.propertyName === "opacity") {
+        instructions.close();
+      }
+    });
+    window.addEventListener("keydown", (event) => {
+      if (event.key.toLowerCase() !== "f" || event.altKey || event.ctrlKey || event.metaKey) {
+        return;
+      }
+      if (event.target instanceof HTMLElement && event.target.closest("input, textarea, select, [contenteditable='true']")) {
+        return;
+      }
+      event.preventDefault();
+      if (!instructions.open) {
+        startGameButton.disabled = false;
+        instructions.classList.remove("is-closing");
+        instructions.showModal();
+      }
+    });
+    restoreUsernameLockout();
+    instructions.showModal();
+
+    upgrades.forEach((upgrade, index) => {
+      const item = document.createElement("div");
+      item.className = "upgrade";
+
+      const description = document.createElement("div");
+      const name = document.createElement("p");
+      name.className = "upgrade-name";
+      name.textContent = upgrade.name;
+
+      const detail = document.createElement("p");
+      detail.className = "upgrade-detail";
+      upgradeDetails.push(detail);
+
+      const button = document.createElement("button");
+      button.className = "buy-button";
+      button.type = "button";
+      button.textContent = `Buy · ${upgrade.cost.toLocaleString()}`;
+      upgradeButtons.push(button);
+      button.addEventListener("click", () => {
+        const cost = upgradeCosts[index];
+        if (score < cost) {
+          return;
+        }
+
+        score -= cost;
+        upgradePurchaseCounts[index] += 1;
+        upgradeCosts[index] = Math.ceil(cost * (upgrade.costScale ?? 1.9));
+        if (upgrade.effect === "passive") {
+          pointsPerSecond += upgrade.value;
+        } else if (upgrade.effect === "tap") {
+          clickMultiplier += upgrade.value;
+        } else if (upgrade.effect === "tapMultiplier") {
+          clickMultiplier *= upgrade.value;
+        } else if (upgrade.effect === "passiveMultiplier") {
+          passiveMultiplier *= upgrade.value;
+        } else if (upgrade.effect === "echo") {
+          echoCount += 1;
+        }
+        updateScore();
+      });
+
+      description.append(name, detail);
+      item.append(description, button);
+      upgradeList.appendChild(item);
+    });
+
+    function updateScore(persist = true) {
+      scoreDisplay.textContent = score.toLocaleString();
+      upgradeButtons.forEach((button, index) => {
+        const cost = upgradeCosts[index];
+        const purchaseCount = upgradePurchaseCounts[index];
+        button.disabled = score < cost;
+        button.textContent = `${purchaseCount > 0 ? "Buy again" : "Buy"} · ${cost.toLocaleString()}`;
+        button.setAttribute("aria-label", `Buy ${upgrades[index].name} for ${cost.toLocaleString()} points`);
+        upgradeDetails[index].textContent = `${upgrades[index].detail} · Cost: ${cost.toLocaleString()}${purchaseCount > 0 ? ` · Owned: ${purchaseCount}` : ""}`;
+      });
+      const recordingUnlocked = score >= 200;
+      openCameraButton.hidden = localCameraPointGate && score < 300;
+      microphoneButton.hidden = !recordingUnlocked;
+      recordAgainButton.hidden = !recordingUrl || mediaRecorder?.state === "recording";
+      microphoneButton.textContent = mediaRecorder?.state === "recording"
+        ? "Stop recording"
+        : recordingUrl
+          ? "Play recording"
+          : "Start microphone recording";
+      recordingStatus.classList.toggle("unlocked", recordingUnlocked);
+      if (recordingUnlocked && recordingStatus.textContent === "Reach 200 points to unlock microphone recording.") {
+        recordingStatus.textContent = "Microphone recording unlocked.";
+      } else if (!recordingUnlocked && !recordingUrl && mediaRecorder?.state !== "recording") {
+        recordingStatus.textContent = "Reach 200 points to unlock microphone recording.";
+      }
+      if (persist) {
+        persistCurrentProgress();
+      }
+    }
+
+    function resetComboTimeout() {
+      combo = Math.min(combo + 1, 8);
+      comboDisplay.textContent = `Combo: ${combo}x${combo > 1 ? " 🔥" : ""}`;
+      window.clearTimeout(comboTimer);
+      comboTimer = window.setTimeout(() => {
+        combo = 1;
+        comboDisplay.textContent = "Combo: 1x";
+      }, 1500);
+    }
+
+    function getProgressSnapshot() {
+      return {
+        version: 3,
+        state: {
+          score,
+          pointsPerSecond,
+          clickMultiplier,
+          passiveMultiplier,
+          upgradeCosts: [...upgradeCosts],
+          upgradePurchaseCounts: [...upgradePurchaseCounts]
+        }
+      };
+    }
+
+    function showSavedProgress(save) {
+      savedProgressDisplay.textContent = `${activeUsername} · Saved in this browser · Score: ${save.state.score.toLocaleString()}`;
+      savedProgressDisplay.hidden = false;
+    }
+
+    function isValidSave(save) {
+      const state = save?.state;
+      return save?.version === 3
+        && Number.isFinite(state?.score) && state.score >= 0
+        && Number.isFinite(state?.pointsPerSecond) && state.pointsPerSecond >= 0
+        && Number.isFinite(state?.clickMultiplier) && state.clickMultiplier >= 1
+        && Number.isFinite(state?.passiveMultiplier) && state.passiveMultiplier >= 1
+        && Array.isArray(state?.upgradeCosts) && state.upgradeCosts.length === upgrades.length
+        && state.upgradeCosts.every((cost) => Number.isSafeInteger(cost) && cost > 0)
+        && Array.isArray(state?.upgradePurchaseCounts) && state.upgradePurchaseCounts.length === upgrades.length
+        && state.upgradePurchaseCounts.every((count) => Number.isSafeInteger(count) && count >= 0);
+    }
+
+    function restoreProgress(save) {
+      score = save.state.score;
+      pointsPerSecond = save.state.pointsPerSecond;
+      clickMultiplier = save.state.clickMultiplier;
+      passiveMultiplier = save.state.passiveMultiplier;
+      save.state.upgradeCosts.forEach((cost, index) => {
+        upgradeCosts[index] = cost;
+      });
+      save.state.upgradePurchaseCounts.forEach((count, index) => {
+        upgradePurchaseCounts[index] = count;
+      });
+      echoCount = upgradePurchaseCounts[5];
+      updateScore(false);
+    }
+
+    function readLocalAccounts() {
+      const serializedAccounts = localStorage.getItem(localAccountsStorageKey);
+      if (!serializedAccounts) {
+        return Object.create(null);
+      }
+      let parsedAccounts;
+      try {
+        parsedAccounts = JSON.parse(serializedAccounts);
+      } catch (error) {
+        if (!(error instanceof SyntaxError)) {
+          throw error;
+        }
+        throw new Error("Local account data is unreadable. It has not been changed.");
+      }
+      if (!parsedAccounts || typeof parsedAccounts !== "object" || Array.isArray(parsedAccounts)) {
+        throw new Error("Local account data is invalid. It has not been changed.");
+      }
+      return Object.assign(Object.create(null), parsedAccounts);
+    }
+
+    function bytesFromHex(hex) {
+      return Uint8Array.from(hex.match(/.{2}/g), (pair) => Number.parseInt(pair, 16));
+    }
+
+    function bytesToHex(bytes) {
+      return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+    }
+
+    async function hashGameCode(gameCode, salt) {
+      if (!window.crypto?.subtle) {
+        throw new Error("This browser cannot securely check Game Codes. Open the site from localhost or a secure connection.");
+      }
+      const key = await window.crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(gameCode),
+        "PBKDF2",
+        false,
+        ["deriveBits"]
+      );
+      const hash = await window.crypto.subtle.deriveBits({
+        name: "PBKDF2",
+        salt: bytesFromHex(salt),
+        iterations: 120000,
+        hash: "SHA-256"
+      }, key, 256);
+      return bytesToHex(new Uint8Array(hash));
+    }
+
+    function hashesMatch(first, second) {
+      if (typeof first !== "string" || first.length !== second.length) {
+        return false;
+      }
+      let difference = 0;
+      for (let index = 0; index < first.length; index += 1) {
+        difference |= first.charCodeAt(index) ^ second.charCodeAt(index);
+      }
+      return difference === 0;
+    }
+
+    function readLegacyProgress() {
+      const savedProgress = localStorage.getItem(localProgressStorageKey);
+      if (!savedProgress) {
+        return getProgressSnapshot();
+      }
+      try {
+        const parsed = JSON.parse(savedProgress);
+        return isValidSave(parsed) ? parsed : getProgressSnapshot();
+      } catch (error) {
+        if (error instanceof SyntaxError) {
+          return getProgressSnapshot();
+        }
+        throw error;
+      }
+    }
+
+    function enterLocalGame(accountKey, account) {
+      activeAccountKey = accountKey;
+      activeUsername = account.username;
+      authPanel.hidden = true;
+      game.classList.remove("is-locked");
+      authStatus.textContent = "";
+      gameCodeInput.value = "";
+      restoreProgress(account.snapshot);
+      savedProgressDisplay.hidden = false;
+      showSavedProgress(account.snapshot);
+      leaveGameButton.hidden = false;
+      exportSaveButton.hidden = false;
+      shareSaveButton.hidden = false;
+    }
+
+    function resetProgress() {
+      if (recordingUrl) {
+        URL.revokeObjectURL(recordingUrl);
+        recordingUrl = undefined;
+      }
+      recordedAudio.pause();
+      recordedAudio.removeAttribute("src");
+      recordedAudio.hidden = true;
+      score = 0;
+      pointsPerSecond = 0;
+      clickMultiplier = 1;
+      passiveMultiplier = 1;
+      combo = 1;
+      echoCount = 0;
+      upgrades.forEach((upgrade, index) => {
+        upgradeCosts[index] = upgrade.cost;
+        upgradePurchaseCounts[index] = 0;
+      });
+      comboDisplay.textContent = "Combo: 1x";
+      updateScore(false);
+      savedProgressDisplay.hidden = true;
+      exportSaveButton.hidden = true;
+      shareSaveButton.hidden = true;
+    }
+
+    function persistCurrentProgress() {
+      if (!activeAccountKey) {
+        return;
+      }
+      const snapshot = getProgressSnapshot();
+      try {
+        const accounts = readLocalAccounts();
+        const account = accounts[activeAccountKey];
+        if (!account) {
+          throw new Error("This local account could not be found.");
+        }
+        account.snapshot = snapshot;
+        localStorage.setItem(localAccountsStorageKey, JSON.stringify(accounts));
+        showSavedProgress(snapshot);
+      } catch (error) {
+        savedProgressDisplay.textContent = `Could not save locally: ${error.message}`;
+        savedProgressDisplay.hidden = false;
+        console.error("Could not save game progress locally.", error);
+      }
+    }
+
+    async function createLocalGame() {
+      if (checkUsernameForLockout()) {
+        return;
+      }
+      if (!authForm.reportValidity()) {
+        return;
+      }
+      const username = usernameInput.value.trim();
+      const accountKey = username.toLowerCase();
+      const gameCode = gameCodeInput.value;
+      if (!/^[A-Za-z0-9_]{3,24}$/.test(username)) {
+        authStatus.textContent = "Username must be 3 to 24 letters, numbers, or underscores.";
+        return;
+      }
+
+      setAuthActionsDisabled(true);
+      authStatus.textContent = "Creating your local game…";
+      try {
+        const accounts = readLocalAccounts();
+        if (Object.hasOwn(accounts, accountKey)) {
+          throw new Error("That username already exists in this browser. Load it with its Game Code.");
+        }
+        const saltBytes = window.crypto.getRandomValues(new Uint8Array(16));
+        const salt = bytesToHex(saltBytes);
+        const snapshot = readLegacyProgress();
+        const account = {
+          username,
+          salt,
+          gameCodeHash: await hashGameCode(gameCode, salt),
+          snapshot
+        };
+        accounts[accountKey] = account;
+        localStorage.setItem(localAccountsStorageKey, JSON.stringify(accounts));
+        localStorage.removeItem(localProgressStorageKey);
+        enterLocalGame(accountKey, account);
+      } catch (error) {
+        authStatus.textContent = error instanceof Error
+          ? error.message
+          : "Could not create the local game. Please try again.";
+      } finally {
+        setAuthActionsDisabled(isUsernameLockedOut());
+      }
+    }
+
+    async function loadLocalGame(event) {
+      event.preventDefault();
+      if (checkUsernameForLockout()) {
+        return;
+      }
+      if (!authForm.reportValidity()) {
+        return;
+      }
+      const username = usernameInput.value.trim();
+      const accountKey = username.toLowerCase();
+      const gameCode = gameCodeInput.value;
+      if (!/^[A-Za-z0-9_]{3,24}$/.test(username)) {
+        authStatus.textContent = "Username must be 3 to 24 letters, numbers, or underscores.";
+        return;
+      }
+
+      setAuthActionsDisabled(true);
+      authStatus.textContent = "Loading your local game…";
+      try {
+        const account = readLocalAccounts()[accountKey];
+        if (!account
+          || typeof account.salt !== "string"
+          || !/^[a-f0-9]{32}$/i.test(account.salt)
+          || typeof account.gameCodeHash !== "string"
+          || !/^[a-f0-9]{64}$/i.test(account.gameCodeHash)) {
+          throw new Error("Username or Game Code not found in this browser.");
+        }
+        const providedHash = await hashGameCode(gameCode, account.salt);
+        if (!hashesMatch(account.gameCodeHash, providedHash)) {
+          throw new Error("Username or Game Code not found in this browser.");
+        }
+        if (!isValidSave(account.snapshot)) {
+          throw new Error("The saved game data is invalid. It has not been changed.");
+        }
+        enterLocalGame(accountKey, account);
+      } catch (error) {
+        authStatus.textContent = error instanceof Error
+          ? error.message
+          : "Could not load the local game. Please try again.";
+      } finally {
+        setAuthActionsDisabled(isUsernameLockedOut());
+      }
+    }
+
+    function createLocalSaveFile() {
+      if (!activeAccountKey) {
+        throw new Error("Load a game before creating a save file.");
+      }
+      const saveFile = {
+        format: "dj-click-deck-save",
+        version: 1,
+        username: activeUsername,
+        exportedAt: new Date().toISOString(),
+        snapshot: getProgressSnapshot()
+      };
+      return new File(
+        [JSON.stringify(saveFile, null, 2)],
+        `dj-click-deck-${activeUsername}-save.json`,
+        { type: "application/json" }
+      );
+    }
+
+    function downloadLocalSave(file) {
+      const downloadUrl = URL.createObjectURL(file);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = file.name;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+    }
+
+    function exportLocalSave() {
+      try {
+        downloadLocalSave(createLocalSaveFile());
+        recordingStatus.textContent = "Save file downloaded to this device. Attach it to an email or move it to another device.";
+      } catch (error) {
+        recordingStatus.textContent = error instanceof Error
+          ? `Could not export the save file: ${error.message}`
+          : "Could not export the save file. Please try again.";
+      }
+    }
+
+    async function shareLocalSave() {
+      let file;
+      try {
+        file = createLocalSaveFile();
+      } catch (error) {
+        recordingStatus.textContent = error instanceof Error
+          ? `Could not create the save file: ${error.message}`
+          : "Could not create the save file. Please try again.";
+        return;
+      }
+
+      if (!navigator.share || !navigator.canShare?.({ files: [file] })) {
+        downloadLocalSave(file);
+        recordingStatus.textContent = "This browser cannot attach files to its share menu. The save was downloaded; attach it to an email yourself.";
+        return;
+      }
+
+      shareSaveButton.disabled = true;
+      try {
+        await navigator.share({
+          files: [file],
+          title: "DJ Click Deck save",
+          text: `DJ Click Deck progress for ${activeUsername}. The save file does not contain a Game Code.`
+        });
+        recordingStatus.textContent = "Share sheet closed. Send the save as an attachment so it can be imported on another device.";
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          recordingStatus.textContent = "Sharing cancelled. Your game was not changed.";
+        } else {
+          recordingStatus.textContent = error instanceof Error
+            ? `Could not share the save file: ${error.message}`
+            : "Could not share the save file. Please try again.";
+        }
+      } finally {
+        shareSaveButton.disabled = false;
+      }
+    }
+
+    async function importLocalSave() {
+      if (checkUsernameForLockout()) {
+        return;
+      }
+      if (!authForm.reportValidity()) {
+        return;
+      }
+      const file = importSaveFile.files?.[0];
+      if (!file) {
+        authStatus.textContent = "Choose a DJ Click Deck save file first.";
+        importSaveFile.focus();
+        return;
+      }
+      if (file.size > 1024 * 1024) {
+        authStatus.textContent = "That save file is too large to import.";
+        return;
+      }
+
+      setAuthActionsDisabled(true);
+      authStatus.textContent = "Checking your save file…";
+      try {
+        let imported;
+        try {
+          imported = JSON.parse(await file.text());
+        } catch (error) {
+          if (!(error instanceof SyntaxError)) {
+            throw error;
+          }
+          throw new Error("That file is not valid JSON.");
+        }
+        if (imported?.format !== "dj-click-deck-save"
+          || imported.version !== 1
+          || typeof imported.username !== "string"
+          || !isValidSave(imported.snapshot)) {
+          throw new Error("That file is not a valid DJ Click Deck save.");
+        }
+
+        const username = usernameInput.value.trim();
+        if (!/^[A-Za-z0-9_]{3,24}$/.test(username)) {
+          authStatus.textContent = "Username must be 3 to 24 letters, numbers, or underscores.";
+          usernameInput.focus();
+          return;
+        }
+        const accountKey = username.toLowerCase();
+        const accounts = readLocalAccounts();
+        const existingAccount = accounts[accountKey];
+        let salt;
+        let gameCodeHash;
+        if (existingAccount) {
+          if (typeof existingAccount.salt !== "string"
+            || !/^[a-f0-9]{32}$/i.test(existingAccount.salt)
+            || typeof existingAccount.gameCodeHash !== "string"
+            || !/^[a-f0-9]{64}$/i.test(existingAccount.gameCodeHash)) {
+            throw new Error("The existing local account data is invalid; it has not been changed.");
+          }
+          const providedHash = await hashGameCode(gameCodeInput.value, existingAccount.salt);
+          if (!hashesMatch(existingAccount.gameCodeHash, providedHash)) {
+            throw new Error("Username or Game Code not found in this browser.");
+          }
+          if (!window.confirm(`Replace ${existingAccount.username}'s saved progress with the imported save?`)) {
+            authStatus.textContent = "Import cancelled. Your saved game was not changed.";
+            return;
+          }
+          salt = existingAccount.salt;
+          gameCodeHash = existingAccount.gameCodeHash;
+        } else {
+          salt = bytesToHex(window.crypto.getRandomValues(new Uint8Array(16)));
+          gameCodeHash = await hashGameCode(gameCodeInput.value, salt);
+        }
+
+        const account = {
+          username,
+          salt,
+          gameCodeHash,
+          snapshot: imported.snapshot
+        };
+        accounts[accountKey] = account;
+        localStorage.setItem(localAccountsStorageKey, JSON.stringify(accounts));
+        enterLocalGame(accountKey, account);
+        importSaveFile.value = "";
+      } catch (error) {
+        authStatus.textContent = error instanceof Error
+          ? error.message
+          : "Could not import the save file. Please try again.";
+      } finally {
+        setAuthActionsDisabled(isUsernameLockedOut());
+      }
+    }
+
+    createGameButton.addEventListener("click", createLocalGame);
+    authForm.addEventListener("submit", loadLocalGame);
+    importSaveButton.addEventListener("click", importLocalSave);
+    exportSaveButton.addEventListener("click", exportLocalSave);
+    shareSaveButton.addEventListener("click", shareLocalSave);
+    leaveGameButton.addEventListener("click", () => {
+      if (recordingInProgress || mediaRecorder?.state === "recording") {
+        recordingStatus.textContent = "Stop the microphone recording before switching accounts.";
+        return;
+      }
+      persistCurrentProgress();
+      activeAccountKey = undefined;
+      activeUsername = undefined;
+      resetProgress();
+      game.classList.add("is-locked");
+      leaveGameButton.hidden = true;
+      exportSaveButton.hidden = true;
+      shareSaveButton.hidden = true;
+      authPanel.hidden = false;
+      authStatus.textContent = "";
+      usernameInput.value = "";
+      gameCodeInput.value = "";
+      usernameInput.focus();
+    });
+
+    async function toggleMicrophoneRecording(recordAgain = false) {
+      if (mediaRecorder?.state === "recording") {
+        mediaRecorder.stop();
+        recordingStatus.textContent = "Preparing your mix…";
+        return;
+      }
+
+      if (score < 200) {
+        recordingStatus.textContent = "Reach 200 points to unlock microphone recording.";
+        return;
+      }
+
+      if (recordingInProgress) {
+        return;
+      }
+
+      if (recordingUrl && !recordAgain) {
+        recordedAudio.currentTime = 0;
+        try {
+          await recordedAudio.play();
+          recordingStatus.textContent = "Playing your recording…";
+        } catch (error) {
+          recordingStatus.textContent = "Could not play your recording. Use the audio controls to try again.";
+        }
+        return;
+      }
+
+      if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+        recordingStatus.textContent = "Audio recording is not supported in this browser.";
+        return;
+      }
+      recordingInProgress = true;
+      recordingStatus.textContent = "Waiting for microphone permission…";
+
+      try {
+        microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        recordingChunks = [];
+        mediaRecorder = new MediaRecorder(microphoneStream);
+        mediaRecorder.addEventListener("dataavailable", (event) => {
+          if (event.data.size > 0) {
+            recordingChunks.push(event.data);
+          }
+        });
+        mediaRecorder.addEventListener("stop", async () => {
+          recordingInProgress = true;
+          try {
+            microphoneStream?.getTracks().forEach((track) => track.stop());
+            microphoneStream = undefined;
+            const recording = new Blob(recordingChunks, {
+              type: mediaRecorder.mimeType || "audio/webm"
+            });
+            const nextRecordingUrl = URL.createObjectURL(recording);
+
+            if (recordingUrl) {
+              URL.revokeObjectURL(recordingUrl);
+            }
+            recordingUrl = nextRecordingUrl;
+            recordedAudio.src = recordingUrl;
+            recordedAudio.hidden = false;
+            updateScore();
+            recordingStatus.textContent = "Recording is ready to play and will last until this page is closed.";
+            recordedAudio.currentTime = 0;
+            recordedAudio.play().catch(() => {
+              recordingStatus.textContent = "Recording is ready. Use the audio controls to play your mix.";
+            });
+          } catch (error) {
+            recordingStatus.textContent = `Could not prepare your recording: ${error.message}`;
+            console.error("Could not prepare the microphone recording.", error);
+          } finally {
+            recordingInProgress = false;
+            updateScore(false);
+          }
+        });
+        mediaRecorder.start();
+        recordingStatus.textContent = "Recording… Click the microphone button to stop.";
+        updateScore();
+      } catch (error) {
+        recordingStatus.textContent = error instanceof Error
+          ? `Could not start recording: ${error.message}`
+          : "Could not start recording. Check microphone permission and try again.";
+        microphoneStream?.getTracks().forEach((track) => track.stop());
+        microphoneStream = undefined;
+        recordingInProgress = false;
+      }
+
+      recordingInProgress = false;
+    }
+
+    microphoneButton.addEventListener("click", toggleMicrophoneRecording);
+    recordAgainButton.addEventListener("click", () => toggleMicrophoneRecording(true));
+
+    let cameraStream;
+    let photoBlob;
+    let photoUrl;
+    let photoBackgroundIndex = 0;
+    let selfieSegmentation;
+    let selfieSegmentationLoad;
+    let pendingMaskResult;
+    const photoBackgrounds = [
+      ["#06b6d4", "#7c3aed", "#f472b6"],
+      ["#f97316", "#facc15", "#db2777"],
+      ["#0ea5e9", "#6366f1", "#a855f7"],
+      ["#22c55e", "#14b8a6", "#0ea5e9"]
+    ];
+
+    function stopPhotoCamera() {
+      cameraStream?.getTracks().forEach((track) => track.stop());
+      cameraStream = undefined;
+      cameraVideo.srcObject = null;
+    }
+
+    function clearPhotoPreview() {
+      if (photoUrl) {
+        URL.revokeObjectURL(photoUrl);
+        photoUrl = undefined;
+      }
+      photoBlob = undefined;
+      photoSourceCanvas.width = 0;
+      photoSourceCanvas.height = 0;
+      photoMaskCanvas.width = 0;
+      photoMaskCanvas.height = 0;
+      photoSubjectCanvas.width = 0;
+      photoSubjectCanvas.height = 0;
+      photoPreview.removeAttribute("src");
+      photoPreview.hidden = true;
+      photoStage.classList.remove("is-captured");
+      sharePhotoButton.hidden = true;
+      downloadPhotoButton.hidden = true;
+      retakePhotoButton.hidden = true;
+    }
+
+    function loadSelfieSegmentation() {
+      if (window.SelfieSegmentation) {
+        return Promise.resolve();
+      }
+      if (selfieSegmentationLoad) {
+        return selfieSegmentationLoad;
+      }
+
+      selfieSegmentationLoad = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1.1675465747/selfie_segmentation.js";
+        script.crossOrigin = "anonymous";
+        script.addEventListener("load", resolve, { once: true });
+        script.addEventListener("error", () => reject(new Error("Could not load the on-device background remover. Check your internet connection and try again.")), { once: true });
+        document.head.append(script);
+      }).catch((error) => {
+        selfieSegmentationLoad = undefined;
+        throw error;
+      });
+
+      return selfieSegmentationLoad;
+    }
+
+    async function getPersonMask() {
+      await loadSelfieSegmentation();
+      if (!selfieSegmentation) {
+        selfieSegmentation = new window.SelfieSegmentation({
+          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1.1675465747/${file}`
+        });
+        selfieSegmentation.setOptions({ modelSelection: 1 });
+        selfieSegmentation.onResults((results) => {
+          if (!pendingMaskResult) {
+            return;
+          }
+          const maskContext = photoMaskCanvas.getContext("2d");
+          if (!maskContext || !results.segmentationMask) {
+            pendingMaskResult.reject(new Error("The background remover did not return a person mask."));
+            pendingMaskResult = undefined;
+            return;
+          }
+          photoMaskCanvas.width = photoSourceCanvas.width;
+          photoMaskCanvas.height = photoSourceCanvas.height;
+          photoMaskCanvas.getContext("2d").drawImage(results.segmentationMask, 0, 0, photoMaskCanvas.width, photoMaskCanvas.height);
+          pendingMaskResult.resolve();
+          pendingMaskResult = undefined;
+        });
+      }
+
+      await new Promise((resolve, reject) => {
+        pendingMaskResult = { resolve, reject };
+        selfieSegmentation.send({ image: photoSourceCanvas }).catch((error) => {
+          if (pendingMaskResult) {
+            pendingMaskResult.reject(error);
+            pendingMaskResult = undefined;
+          }
+        });
+      });
+    }
+
+    async function createBackgroundPhoto() {
+      if (!photoMaskCanvas.width || !photoMaskCanvas.height) {
+        cameraStatus.textContent = "Removing the room behind you on this device…";
+        await getPersonMask();
+      }
+      photoCanvas.width = photoSourceCanvas.width;
+      photoCanvas.height = photoSourceCanvas.height;
+      const context = photoCanvas.getContext("2d");
+      if (!context) {
+        throw new Error("Could not prepare the photo on this device.");
+      }
+
+      photoSubjectCanvas.width = photoSourceCanvas.width;
+      photoSubjectCanvas.height = photoSourceCanvas.height;
+      const subjectContext = photoSubjectCanvas.getContext("2d");
+      if (!subjectContext) {
+        throw new Error("Could not prepare the person cutout on this device.");
+      }
+      subjectContext.globalCompositeOperation = "source-over";
+      subjectContext.drawImage(photoSourceCanvas, 0, 0);
+      subjectContext.globalCompositeOperation = "destination-in";
+      subjectContext.drawImage(photoMaskCanvas, 0, 0);
+
+      const colors = photoBackgrounds[photoBackgroundIndex];
+      const gradient = context.createLinearGradient(0, 0, photoCanvas.width, photoCanvas.height);
+      gradient.addColorStop(0, colors[0]);
+      gradient.addColorStop(0.58, colors[1]);
+      gradient.addColorStop(1, colors[2]);
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, photoCanvas.width, photoCanvas.height);
+      context.drawImage(photoSubjectCanvas, 0, 0);
+
+      return new Promise((resolve, reject) => {
+        photoCanvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error("The browser could not create an image."));
+          }
+        }, "image/jpeg", 0.9);
+      });
+    }
+
+    changeBackgroundButton.addEventListener("click", async () => {
+      photoBackgroundIndex = (photoBackgroundIndex + 1) % photoBackgrounds.length;
+      photoStage.dataset.photoBackground = String(photoBackgroundIndex + 1);
+      if (!photoBlob) {
+        cameraStatus.textContent = `Background ${photoBackgroundIndex + 1} selected. Take a photo to use it.`;
+        return;
+      }
+
+      changeBackgroundButton.disabled = true;
+      try {
+        const updatedPhoto = await createBackgroundPhoto();
+        const updatedPhotoUrl = URL.createObjectURL(updatedPhoto);
+        const previousPhotoUrl = photoUrl;
+        photoBlob = updatedPhoto;
+        photoUrl = updatedPhotoUrl;
+        photoPreview.src = photoUrl;
+        if (previousPhotoUrl) {
+          URL.revokeObjectURL(previousPhotoUrl);
+        }
+        sharePhotoButton.hidden = !navigator.share
+          || !navigator.canShare?.({ files: [new File([photoBlob], "dj-click-deck-photo.jpg", { type: "image/jpeg" })] });
+        cameraStatus.textContent = `Background ${photoBackgroundIndex + 1} applied to your photo.`;
+      } catch (error) {
+        cameraStatus.textContent = `Could not change the photo background: ${error.message}`;
+      } finally {
+        changeBackgroundButton.disabled = false;
+      }
+    });
+
+    async function startPhotoCamera() {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        cameraStatus.textContent = "Camera access is unavailable. Open this page over HTTPS or localhost and use a supported browser.";
+        return;
+      }
+
+      cameraStatus.textContent = "Waiting for camera permission…";
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: { facingMode: "user" }
+        });
+        if (!cameraDialog.open) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+        stopPhotoCamera();
+        cameraStream = stream;
+        cameraVideo.srcObject = stream;
+        photoStage.classList.remove("is-captured");
+        cameraVideo.hidden = false;
+        photoPreview.hidden = true;
+        capturePhotoButton.hidden = false;
+        cameraStatus.textContent = "Camera ready. Take a photo when you’re ready.";
+        await cameraVideo.play();
+      } catch (error) {
+        stopPhotoCamera();
+        cameraVideo.hidden = true;
+        capturePhotoButton.hidden = true;
+        cameraStatus.textContent = `Could not access the camera: ${error.message}`;
+      }
+    }
+
+    openCameraButton.addEventListener("click", async () => {
+      clearPhotoPreview();
+      cameraDialog.showModal();
+      await startPhotoCamera();
+    });
+
+    closeCameraButton.addEventListener("click", () => cameraDialog.close());
+    cameraCloseButton.addEventListener("click", () => cameraDialog.close());
+    cameraDialog.addEventListener("close", stopPhotoCamera);
+
+    capturePhotoButton.addEventListener("click", async () => {
+      if (!cameraVideo.videoWidth || !cameraVideo.videoHeight) {
+        cameraStatus.textContent = "The camera is not ready yet. Try again in a moment.";
+        return;
+      }
+
+      capturePhotoButton.disabled = true;
+      changeBackgroundButton.disabled = true;
+      try {
+        photoSourceCanvas.width = cameraVideo.videoWidth;
+        photoSourceCanvas.height = cameraVideo.videoHeight;
+        const sourceContext = photoSourceCanvas.getContext("2d");
+        if (!sourceContext) {
+          throw new Error("Could not prepare the photo on this device.");
+        }
+        sourceContext.drawImage(cameraVideo, 0, 0);
+        photoBlob = await createBackgroundPhoto();
+        photoUrl = URL.createObjectURL(photoBlob);
+        photoPreview.src = photoUrl;
+        photoPreview.hidden = false;
+        photoStage.classList.add("is-captured");
+        cameraVideo.hidden = true;
+        capturePhotoButton.hidden = true;
+        stopPhotoCamera();
+        sharePhotoButton.hidden = !navigator.share
+          || !navigator.canShare?.({ files: [new File([photoBlob], "dj-click-deck-photo.jpg", { type: "image/jpeg" })] });
+        downloadPhotoButton.hidden = false;
+        retakePhotoButton.hidden = false;
+        cameraStatus.textContent = sharePhotoButton.hidden
+          ? "Background replaced. Download the photo to send it using your preferred app."
+          : "Background replaced. Share the photo with a friend or download it.";
+      } catch (error) {
+        cameraStatus.textContent = `Could not create the photo: ${error.message}`;
+      } finally {
+        capturePhotoButton.disabled = false;
+        changeBackgroundButton.disabled = false;
+      }
+    });
+
+    sharePhotoButton.addEventListener("click", async () => {
+      if (!photoBlob) {
+        cameraStatus.textContent = "Take a photo before sharing.";
+        return;
+      }
+      const photo = new File([photoBlob], "dj-click-deck-photo.jpg", { type: "image/jpeg" });
+      try {
+        await navigator.share({ files: [photo], title: "A photo from DJ Click Deck" });
+        cameraStatus.textContent = "The share sheet has closed.";
+      } catch (error) {
+        cameraStatus.textContent = error.name === "AbortError"
+          ? "Sharing cancelled."
+          : `Could not share the photo: ${error.message}`;
+      }
+    });
+
+    downloadPhotoButton.addEventListener("click", () => {
+      if (!photoUrl) {
+        cameraStatus.textContent = "Take a photo before downloading.";
+        return;
+      }
+      const downloadLink = document.createElement("a");
+      downloadLink.href = photoUrl;
+      downloadLink.download = "dj-click-deck-photo.jpg";
+      downloadLink.click();
+      cameraStatus.textContent = "Photo downloaded. You can attach it in a message to your friends.";
+    });
+
+    retakePhotoButton.addEventListener("click", async () => {
+      clearPhotoPreview();
+      await startPhotoCamera();
+    });
+
+    updateScore(false);
+
+    window.setInterval(() => {
+      if (pointsPerSecond > 0) {
+        score += pointsPerSecond * passiveMultiplier;
+        updateScore();
+      }
+    }, 1000);
+
+    async function playBeat() {
+      if (!audioContext) {
+        audioContext = new AudioContext();
+        noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate, audioContext.sampleRate);
+        const noise = noiseBuffer.getChannelData(0);
+
+        for (let i = 0; i < noise.length; i += 1) {
+          noise[i] = Math.random() * 2 - 1;
+        }
+      }
+
+      if (audioContext.state === "suspended") {
+        await audioContext.resume();
+      }
+
+      const now = audioContext.currentTime;
+      const kick = audioContext.createOscillator();
+      const kickVolume = audioContext.createGain();
+      kick.type = "sine";
+      kick.frequency.setValueAtTime(150, now);
+      kick.frequency.exponentialRampToValueAtTime(45, now + 0.14);
+      kickVolume.gain.setValueAtTime(0.8, now);
+      kickVolume.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      kick.connect(kickVolume);
+      kickVolume.connect(audioContext.destination);
+      kick.start(now);
+      kick.stop(now + 0.18);
+
+      function playNoise({ delay, duration, frequency, volume }) {
+        const source = audioContext.createBufferSource();
+        const filter = audioContext.createBiquadFilter();
+        const noiseVolume = audioContext.createGain();
+        const start = now + delay;
+
+        source.buffer = noiseBuffer;
+        filter.type = "highpass";
+        filter.frequency.value = frequency;
+        noiseVolume.gain.setValueAtTime(volume, start);
+        noiseVolume.gain.exponentialRampToValueAtTime(0.001, start + duration);
+        source.connect(filter);
+        filter.connect(noiseVolume);
+        noiseVolume.connect(audioContext.destination);
+        source.start(start);
+        source.stop(start + duration);
+      }
+
+      playNoise({ delay: 0, duration: 0.045, frequency: 7000, volume: 0.12 });
+
+      if (score % 2 === 0) {
+        playNoise({ delay: 0.02, duration: 0.12, frequency: 1400, volume: 0.22 });
+      }
+
+      for (let echoIndex = 0; echoIndex < echoCount; echoIndex += 1) {
+        const echo = audioContext.createOscillator();
+        const echoVolume = audioContext.createGain();
+        const echoStart = now + 0.16 + echoIndex * 0.08;
+        echo.type = "triangle";
+        echo.frequency.setValueAtTime(440, echoStart);
+        echoVolume.gain.setValueAtTime(0.16, echoStart);
+        echoVolume.gain.exponentialRampToValueAtTime(0.001, echoStart + 0.32);
+        echo.connect(echoVolume);
+        echoVolume.connect(audioContext.destination);
+        echo.start(echoStart);
+        echo.stop(echoStart + 0.32);
+      }
+    }
+
+    clickButton.addEventListener("click", async (event) => {
+      score += clickMultiplier * combo;
+      resetComboTimeout();
+      updateScore();
+      scoreDisplay.classList.remove("pop");
+      void scoreDisplay.offsetWidth;
+      scoreDisplay.classList.add("pop");
+
+      await playBeat();
+
+      const zoneBounds = clickZone.getBoundingClientRect();
+      const buttonBounds = clickButton.getBoundingClientRect();
+      const centerX = event.detail === 0
+        ? buttonBounds.left + buttonBounds.width / 2 - zoneBounds.left
+        : event.clientX - zoneBounds.left;
+      const centerY = event.detail === 0
+        ? buttonBounds.top + buttonBounds.height / 2 - zoneBounds.top
+        : event.clientY - zoneBounds.top;
+
+      for (let i = 0; i < 14; i += 1) {
+        const particle = document.createElement("span");
+        const angle = (Math.PI * 2 * i) / 14 + Math.random() * 0.35;
+        const distance = 48 + Math.random() * 72;
+
+        particle.className = "particle";
+        particle.style.setProperty("--x", `${centerX}px`);
+        particle.style.setProperty("--y", `${centerY}px`);
+        particle.style.setProperty("--dx", `${Math.cos(angle) * distance}px`);
+        particle.style.setProperty("--dy", `${Math.sin(angle) * distance}px`);
+        particle.style.setProperty("--size", `${3 + Math.random() * 5}px`);
+        particle.style.setProperty("--color", particleColors[Math.floor(Math.random() * particleColors.length)]);
+        clickZone.appendChild(particle);
+        particle.addEventListener("animationend", () => particle.remove(), { once: true });
+      }
+    });
+  </script>
+</body>
+</html>
